@@ -1,7 +1,5 @@
-pytorch
+torch
 numpy
-skimage
-warnings
+scikit-image
+scikit-learn
 imageio
-sklearn
-os

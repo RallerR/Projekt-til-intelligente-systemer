@@ -1,2 +1,2 @@
-print('Hello Nosy')
+from pytorch import *
 
