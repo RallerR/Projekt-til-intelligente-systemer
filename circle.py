@@ -3,7 +3,7 @@ import os
 import random
 
 # Parameters
-num_images = 100  # Number of images to generate
+num_images = 1000  # Number of images to generate
 image_size = 32   # Size of the image (32x32 pixels)
 output_folder = 'CircleImages'
 

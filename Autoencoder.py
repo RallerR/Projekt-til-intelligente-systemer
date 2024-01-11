@@ -7,35 +7,33 @@ from PIL import Image
 import os
 import matplotlib.pyplot as plt
 
-
 # Define the Autoencoder
 class Autoencoder(torch.nn.Module):
     def __init__(self):
         super(Autoencoder, self).__init__()
         # Encoder
         self.encoder = torch.nn.Sequential(
-            torch.nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1),  # b x 16 x 16 x 16
+            torch.nn.Conv2d(1, 8, kernel_size=3, stride=2, padding=1),  # b x 8 x 16 x 16
             torch.nn.ReLU(),
-            torch.nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),  # b x 32 x 8 x 8
+            torch.nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1),  # b x 16 x 8 x 8
             torch.nn.ReLU(),
-            torch.nn.Flatten(),  # b x 2048
+            torch.nn.Flatten(),  # b x 1024
         )
         # Decoder
         self.decoder = torch.nn.Sequential(
-            torch.nn.Linear(2048, 8 * 8 * 32),  # b x 2048
+            torch.nn.Linear(1024, 8 * 8 * 16),  # b x 1024
             torch.nn.ReLU(),
-            torch.nn.Unflatten(1, (32, 8, 8)),  # b x 32 x 8 x 8
-            torch.nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),  # b x 16 x 16 x 16
+            torch.nn.Unflatten(1, (16, 8, 8)),  # b x 16 x 8 x 8
+            torch.nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1),  # b x 8 x 16 x 16
             torch.nn.ReLU(),
-            torch.nn.ConvTranspose2d(16, 1, kernel_size=3, stride=2, padding=1, output_padding=1),  # b x 1 x 32 x 32
-            torch.nn.Sigmoid(),  # to get values between 0 and 1
+            torch.nn.ConvTranspose2d(8, 1, kernel_size=3, stride=2, padding=1, output_padding=1),  # b x 1 x 32 x 32
+            torch.nn.Sigmoid(),
         )
 
     def forward(self, x):
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return decoded
-
 
 # Custom dataset class
 class CircleDataset(Dataset):
@@ -54,7 +52,6 @@ class CircleDataset(Dataset):
             image = self.transform(image)
         return image, torch.tensor(0)  # Returning 0 as a dummy target
 
-
 # Transformations
 transform = transforms.Compose([
     transforms.ToTensor(),
@@ -63,9 +60,15 @@ transform = transforms.Compose([
 # Load the dataset
 dataset = CircleDataset("CircleImages", transform=transform)
 
-# DataLoader
+# Split the dataset into training and validation sets
+train_size = int(0.8 * len(dataset))
+val_size = len(dataset) - train_size
+train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+
+# DataLoaders for training and validation sets
 batch_size = 1  # Adjust as needed
-train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
 # Device (GPU or CPU)
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -75,23 +78,52 @@ autoencoder = Autoencoder().to(device)
 
 # Loss Function and Optimizer
 loss_function = torch.nn.MSELoss(reduction='sum')
-#loss_function = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.001)
 
-# Training the Autoencoder
-num_epochs = 20  # Adjust as needed
+# Training and validation
+num_epochs = 10  # Adjust as needed
+train_losses = []
+val_losses = []
 for epoch in range(num_epochs):
+    # Training
+    autoencoder.train()
+    train_loss = 0.0
     for data in train_loader:
         img, _ = data
         img = img.to(device)
-        # Forward pass
         output = autoencoder(img)
         loss = loss_function(output, img)
-        # Backward pass
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+        train_loss += loss.item()
+    avg_train_loss = train_loss / len(train_loader)
+    train_losses.append(avg_train_loss)
+
+    # Validation
+    autoencoder.eval()
+    val_loss = 0.0
+    with torch.no_grad():
+        for data in val_loader:
+            img, _ = data
+            img = img.to(device)
+            output = autoencoder(img)
+            loss = loss_function(output, img)
+            val_loss += loss.item()
+    avg_val_loss = val_loss / len(val_loader)
+    val_losses.append(avg_val_loss)
+
+    print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}')
+
+# Optionally, plot the training and validation losses
+plt.figure(figsize=(10, 5))
+plt.plot(train_losses, label='Training Loss')
+plt.plot(val_losses, label='Validation Loss')
+plt.title('Training and Validation Losses')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
 
 
 # Testing the Autoencoder
@@ -114,3 +146,16 @@ with torch.no_grad():  # No need to track gradients
         plt.show()
         break  # Only display the first batch
 
+# To reconstruct an image:
+def reconstruct_image(image_path):
+    image = Image.open(image_path).convert('L')  # Convert to grayscale
+    image = image.resize((32, 32))  # Resize to the expected input size (e.g., 32x32)
+    image = transform(image).unsqueeze(0).to(device)  # Apply the same transformation as during training
+    autoencoder.eval()
+    with torch.no_grad():
+        reconstructed_img = autoencoder(image).cpu().squeeze(0)
+    plt.imshow(reconstructed_img[0], cmap='gray')
+    plt.show()
+
+# Call this function with the path of the new image
+reconstruct_image('Test/circle_1.jpg')
