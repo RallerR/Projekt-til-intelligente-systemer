@@ -1,5 +1,11 @@
-torch
+matplotlib
 numpy
+imageio
 scikit-image
 scikit-learn
-imageio
+tensorFlow
+PyTorchok
+glob
+os
+torch
+torchvision
