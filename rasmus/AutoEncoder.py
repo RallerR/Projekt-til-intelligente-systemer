@@ -9,7 +9,7 @@ import Model as Mdl
 
 def Kør_Auto_encoder():
     # Load the dataset
-    dataset = CD.CircleDataset("CircleImages", transform=Tr.transform)
+    dataset = CD.CircleDataset("Dataset1", transform=Tr.transform)
 
     # Split the dataset into training and validation sets
     train_size = int(0.8 * len(dataset))
@@ -75,3 +75,5 @@ def Kør_Auto_encoder():
     plt.ylabel('Loss')
     plt.legend()
     plt.show()
+
+Kør_Auto_encoder()

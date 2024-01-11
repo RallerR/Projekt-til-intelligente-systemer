@@ -5,7 +5,7 @@ import random
 # Parameters
 num_images = 2  # Number of images to generate
 image_size = 32   # Size of the image (32x32 pixels)
-output_folder = 'CircleImages'
+output_folder = 'Dataset1'
 
 # Create output directory if it doesn't exist
 if not os.path.exists(output_folder):
