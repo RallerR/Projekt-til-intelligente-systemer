@@ -10,7 +10,7 @@ import Model as Mdl
 
 
 def train_autoencoder():
-    dataset = CD.CircleDataset("Dataset2", transform=Tr.transform)  # Vælg dataset
+    dataset = CD.CircleDataset("Dataset3", transform=Tr.transform)  # Vælg dataset
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
@@ -20,7 +20,7 @@ def train_autoencoder():
     autoencoder = Mdl.Autoencoder().to(device)
     loss_function = torch.nn.MSELoss(reduction='sum')
     optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.001)
-    num_epochs = 20
+    num_epochs = 10
 
     train_losses = []
     val_losses = []
@@ -89,5 +89,5 @@ def generate_image(model_path, image_path):
 
 
 # Example usage
-train_autoencoder()  # Uncomment this line if you need to train the model
-generate_image('autoencoder_model.pth', 'Dataset2/image.0.png')
+# train_autoencoder()  # Uncomment this line if you need to train the model
+generate_image('autoencoder_model.pth', 'Dataset2/image.410.png')

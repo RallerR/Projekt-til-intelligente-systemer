@@ -14,6 +14,7 @@ class Autoencoder(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Flatten(),  # b x 1024
         )
+
         # Decoder
         self.decoder = torch.nn.Sequential(
             torch.nn.Linear(1024, 8 * 8 * 16),  # b x 1024
