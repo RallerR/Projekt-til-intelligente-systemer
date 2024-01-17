@@ -9,7 +9,7 @@ import Model as Mdl
 
 
 def train_autoencoder():
-    torch.manual_seed(9)
+    torch.manual_seed(11) #9
     dataset = CD.CircleDataset("Dataset3", transform=Tr.transform)  # Vælg dataset
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
@@ -20,7 +20,7 @@ def train_autoencoder():
     autoencoder = Mdl.Autoencoder().to(device)
     loss_function = torch.nn.MSELoss(reduction='sum')
     optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.001, weight_decay=1e-5)
-    num_epochs = 20
+    num_epochs = 15 # 14
 
     #for images, _ in train_loader:
     #    print(torch.min(images), torch.max(images))
@@ -72,6 +72,9 @@ def train_autoencoder():
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
+
+    # plt.savefig('Resultater/loss_plot.png')
+
     plt.show()
 
     return autoencoder
@@ -107,14 +110,17 @@ def generate(model_path, image_path):
     axes[1].axis('off')
 
     plt.tight_layout()
+
+    # plt.savefig('Resultater/reconstruction_random_circle.png')
+
     plt.show()
 
 
 train_autoencoder()  # Kommenter hvis modellen er trænet
-generate('autoencoder_model.pth', 'Dataset3/circle_0.png')
+generate('autoencoder_model.pth', 'test/image.2.png')
 
 
-
+"""
 # Brug decoder til at lave nye cirkler
 
 autoencoder = Mdl.Autoencoder()
@@ -145,3 +151,4 @@ plt.title("Generated Image")
 plt.axis('off')
 plt.show()
 
+"""
