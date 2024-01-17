@@ -9,3 +9,4 @@ glob
 os
 torch
 torchvision
+PIL
