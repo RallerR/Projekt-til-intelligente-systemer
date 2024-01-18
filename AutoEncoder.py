@@ -9,7 +9,7 @@ import Model as Mdl
 
 
 def train_autoencoder():
-    torch.manual_seed(11) #9
+    torch.manual_seed(11)
     dataset = CD.CircleDataset("Dataset3", transform=Tr.transform)  # Vælg dataset
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
@@ -20,7 +20,7 @@ def train_autoencoder():
     autoencoder = Mdl.Autoencoder().to(device)
     loss_function = torch.nn.MSELoss(reduction='sum')
     optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.001, weight_decay=1e-5)
-    num_epochs = 15 # 14
+    num_epochs = 15
 
     #for images, _ in train_loader:
     #    print(torch.min(images), torch.max(images))
@@ -94,10 +94,9 @@ def generate(model_path, image_path):
 
     with torch.no_grad():
         reconstructed_image = autoencoder(transformed_image).cpu().squeeze(0)
-        bottleneck_values = autoencoder.encode(transformed_image)
+        # bottleneck_values = autoencoder.encode(transformed_image)
 
-    # Print bottleneck
-    print("Bottleneck values:", bottleneck_values.cpu().numpy())
+    # print("Bottleneck values:", bottleneck_values.cpu().numpy())
 
     fig, axes = plt.subplots(1, 2, figsize=(8, 4))
 
@@ -111,44 +110,86 @@ def generate(model_path, image_path):
 
     plt.tight_layout()
 
-    # plt.savefig('Resultater/reconstruction_random_circle.png')
+    # plt.savefig('Resultater/reconstruction_1_hidden_layer.png')
+
+    plt.show()
+
+# Generer nye tilfældige cirkler
+def generate_images_with_vector_modification(model_path, index_to_modify, value_range, n_rows=2, n_cols=5):
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    autoencoder = Mdl.Autoencoder().to(device)
+    autoencoder.load_state_dict(torch.load(model_path))
+    autoencoder.eval()
+
+    values = [143.62097, 160.43253, 22.21773, 0., 79.460464, 0., 0., 0., 0., 7.0736217]
+    base_vector = torch.tensor([values]).to(device)
+
+    n_images = n_rows * n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2, n_rows * 2))
+
+    axes = axes.flatten() if n_rows > 1 else [axes]
+
+    for i, value in enumerate(torch.linspace(value_range[0], value_range[1], steps=n_images)):
+        modified_vector = base_vector.clone()
+        modified_vector[0, index_to_modify] = value
+
+        with torch.no_grad():
+            generated_image = autoencoder.decoder(modified_vector).cpu().squeeze(0)
+
+        axes[i].imshow(generated_image[0], cmap='gray')
+        axes[i].set_title(f"Value: {value:.2f}")
+        axes[i].axis('on')
+        axes[i].grid(True)
+        axes[i].set_xticks([0, 10, 20, 30])
+        axes[i].set_yticks([0, 10, 20, 30])
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.suptitle("Effect of Changing Value at Index 0", fontsize=14, verticalalignment='top')
+
+    # plt.savefig('Resultater/Varierende Index 0.png')
 
     plt.show()
 
 
-train_autoencoder()  # Kommenter hvis modellen er trænet
-generate('autoencoder_model.pth', 'test/image.2.png')
+# Generer nye tilfældige cirkler
+def generate_random_circles(model_path, value_ranges, number_of_circles):
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    autoencoder = Mdl.Autoencoder().to(device)
+    autoencoder.load_state_dict(torch.load(model_path))
+    autoencoder.eval()
+
+    for i in range(number_of_circles):
+        random_values = [torch.FloatTensor(1).uniform_(low, high) for low, high in value_ranges]
+        random_vector = torch.cat(random_values, dim=0).unsqueeze(0).to(device)
+
+        with torch.no_grad():
+            generated_image = autoencoder.decoder(random_vector).cpu().squeeze(0)
+
+        plt.imshow(generated_image[0], cmap='gray')
+        plt.title(f"Randomly Generated Circle {i+1}")
+        plt.axis('on')
+        plt.grid(True)
+        plt.xticks([0, 10, 20, 30])
+        plt.yticks([0, 10, 20, 30])
+
+        plt.savefig(f'Pilotstudy/randomly_generated_circle_{i+1}.png')
+
+        plt.show()
 
 
-"""
-# Brug decoder til at lave nye cirkler
+# Træn autoencoderen
+train_autoencoder()  # Kommenter ud hvis modellen er trænet
 
-autoencoder = Mdl.Autoencoder()
-autoencoder.load_state_dict(torch.load('autoencoder_model.pth'))
-autoencoder.eval()
+# Rekonstruer billede
+generate('autoencoder_model.pth', 'Dataset3/circle_3.png')
 
-random_vector = torch.randn(1, 10)  # Random vector
-values = [49.726803, 58.998077, 0., 1.1448752, 0., 0., 79.126434, 0., 0., 14.963775 ] # Vector fra training
-specific_vector = torch.tensor([values])
+# Effekt på vektor index
+generate_images_with_vector_modification('autoencoder_model.pth', index_to_modify=0,
+                                         value_range=(-50, 200), n_rows=2, n_cols=5,)
 
-
-random_vector2 = torch.rand(1, 10) * 100
-zero_positions = [0, 4, 6, 7, 9]
-
-for pos in zero_positions:
-    random_vector2[0, pos] = 0.0
-
-# print(random_vector)
-
-with torch.no_grad():
-    generated_image = autoencoder.decoder(specific_vector)
-
-generated_image = generated_image.squeeze().cpu().numpy()
-
-# Plot
-plt.imshow(generated_image, cmap='gray')
-plt.title("Generated Image")
-plt.axis('off')
-plt.show()
-
-"""
+# Generer tilfældig circel
+value_ranges = [(0, 250), (25, 150), (0, 100), (0, 50), (25, 150), (0, 0), (-25, 0), (-25, 25), (0, 0), (0, 50)]
+generate_random_circles('autoencoder_model.pth', value_ranges, number_of_circles=1)

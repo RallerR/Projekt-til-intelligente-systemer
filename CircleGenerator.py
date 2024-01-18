@@ -37,7 +37,7 @@ def generate_random_circle_images(output_folder, num_images):
         img.save(filename)
 
 # Example usage
-output_folder = 'Dataset1'  # Specify the folder where images will be saved
+output_folder = 'Dataset1'
 num_images = 1000  # Specify the number of random circle images to generate
 
 generate_random_circle_images(output_folder, num_images)

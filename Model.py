@@ -23,7 +23,7 @@ class Autoencoder(torch.nn.Module):
 
         # Decoder
         self.decoder = torch.nn.Sequential(
-            torch.nn.Linear(10, 512),  # Output: N x 512
+            torch.nn.Linear(10, 512),  # Output: N x 10
             torch.nn.ReLU(),
             torch.nn.Unflatten(1, (32, 4, 4)),  # Output: N x 32 x 4 x 4
             torch.nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),  # Output: N x 16 x 8 x 8

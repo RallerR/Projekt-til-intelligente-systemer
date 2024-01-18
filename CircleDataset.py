@@ -4,7 +4,6 @@ from PIL import Image
 import os
 
 
-# Custom dataset class
 class CircleDataset(Dataset):
     def __init__(self, directory, transform=None):
         self.directory = directory
@@ -19,6 +18,6 @@ class CircleDataset(Dataset):
         image = Image.open(img_path).convert('L')  # Convert to grayscale
         if self.transform:
             image = self.transform(image)
-        return image, torch.tensor(0)  # Returning 0 as a dummy target
+        return image, torch.tensor(0)
 
 
